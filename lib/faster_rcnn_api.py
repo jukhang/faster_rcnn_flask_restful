@@ -26,7 +26,7 @@ def get_image_blob(im):
     for target_size in TEST_SCALES:
         im_scale = float(target_size) / float(im_size_min)
         if np.round(im_scale * im_size_max) > 1000:
-            im_scale = float(cfg.TEST.MAX_SIZE) / float(im_size_max)
+            im_scale = float(1000) / float(im_size_max)
         im = cv2.resize(im_orig, None, None, fx=im_scale, fy=im_scale,interpolation=cv2.INTER_LINEAR)
         im_scale_factors.append(im_scale)
         processed_ims.append(im)
@@ -94,15 +94,22 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     inds = np.where(dets[:, -1] >= thresh)[0]
     if len(inds) == 0:
         return
-
+    
+    result_list = []
     for i in inds:
         bbox = dets[i, :4]
         score = dets[i, -1]
 
         cv2.rectangle(im,(bbox[0],bbox[1]),(bbox[2],bbox[3]),(255, 0, 255),thickness=2)
         cv2.putText(im,class_name,(bbox[0],int(bbox[1])),cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0))
+        
+        key_list = ['class_name', 'position', 'score']
+        # return result
+        value_list = [class_name, str(bbox), str(score)]
+        result = dict(zip(key_list, value_list))
+        result_list.append(result)
 
-    return 1
+    return result_list
 
 
 def im_detect(im, im_file):
@@ -158,6 +165,7 @@ def im_detect(im, im_file):
     NMS_THRESH = 0.3
     
     from lib.nms_wrapper import nms
+    result_list = []
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
@@ -165,8 +173,11 @@ def im_detect(im, im_file):
         dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])).astype(np.float32)
         keep = nms(dets, NMS_THRESH)
         dets = dets[keep, :]
-        vis_detections(im, cls, dets, thresh=CONF_THRESH)
-
-        pwd = os.path.join('/data/wxh/www/result/', im_file)
-        cv2.imwrite(pwd, im)
-
+        result = vis_detections(im, cls, dets, thresh=CONF_THRESH)
+        if result is not None:
+            #print(result)
+            result_list.append(result)
+        
+    pwd = os.path.join('/data/wxh/www/result/', im_file)
+    cv2.imwrite(pwd, im)
+    return result_list

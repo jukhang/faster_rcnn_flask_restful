@@ -10,7 +10,8 @@ app = Flask(__name__)
 api = Api(app)
 
 RE = {
-    'get' : {'DOC' : 'Faster Rcnn Images Recognition Restful Api'}
+    "get" : {"Doc" : "Faster Rcnn Images Recognition Restful Api, Support Recognition Object Types: ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']."},
+    "WARN" : {"WARNING" : "Not Training Objects!"}
 }
 
 parser = reqparse.RequestParser()
@@ -18,7 +19,7 @@ parser.add_argument('image', type=FileStorage, location='files')
 
 class FsterRcnn(Resource):
     def get(self):
-        return RE['get']
+        return RE['get'], 200
 
     def post(self):
         args = parser.parse_args()
@@ -31,9 +32,11 @@ class FsterRcnn(Resource):
         # faster rcnn
         im_file = os.path.join('/data/wxh/www/image/',im_name)
         im = cv2.imread(im_file)
-        im_detect(im, im_name)
-        return 201
-
+        result_list = im_detect(im, im_name)
+        if result_list:
+            return {'things': result_list }, 201
+        else:
+            return RE['WARN'], 201
 
 api.add_resource(FsterRcnn, '/faster-rcnn')
 
