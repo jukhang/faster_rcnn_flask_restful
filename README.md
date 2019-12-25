@@ -4,7 +4,9 @@
 
 #### System && Python
 
-Python3.6 tensorflow1.9 Ubuntu16.04
+Python 3.6
+tensorflow-gpu 1.9.0 
+Ubuntu 16.04
 
 #### post参数说明
 
